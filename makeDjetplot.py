@@ -6,7 +6,7 @@ import loadlib
 import os
 import ROOT
 import style
-
+from math import *
 
 #plotloc='"~/www/VBF/Djet/'
 plotloc=''
@@ -19,7 +19,7 @@ class Plot(object):
     bins = 100
     units = ""
 
-    def __init__(self, title, color, *CJLSTdirs, **kwargs):
+    def __init__(self, title, color, style=1001, *CJLSTdirs, **kwargs):
         for kwarg in kwargs:
             if kwarg == "maindir":
                 self.maindir = kwargs[kwarg]
@@ -30,6 +30,7 @@ class Plot(object):
         self.filenames = [os.path.join(self.maindir, dir, self.basename) for dir in CJLSTdirs]
         self.title = title
         self.color = color
+        self.style = style
         self._h = None
 
     def __hash__(self):
@@ -41,8 +42,8 @@ class Plot(object):
         tlegend.AddEntry(self.h(), self.title, option)
 
 class TreePlot(Plot):
-    def __init__(self, title, color, *CJLSTdirs, **kwargs):
-        Plot.__init__(self, title, color, *CJLSTdirs, **kwargs)
+    def __init__(self, title, color, style, *CJLSTdirs, **kwargs):
+        Plot.__init__(self, title, color, style,  *CJLSTdirs, **kwargs)
 
     def h(self, bins = None):
         if self._h is not None and bins is None:
@@ -97,10 +98,76 @@ class TreePlot(Plot):
             self._h = h
         return self._h
 
+    def vbf_eff_jec(self, bins=None):
+        t = ROOT.TChain("ZZTree/candTree")
+        for filename in self.filenames:
+            t.Add(filename)
+
+        n_pass_ct = {}
+        n_pass_up = {}
+        n_pass_dn = {}
+        n_total = {}
+        eff_jec = {}
+        for bin in bins:
+            n_pass_ct[bin] = 0.0
+            n_pass_up[bin] = 0.0
+            n_pass_dn[bin] = 0.0
+            n_total[bin] = 0.0
+            eff_jec[bin] = [0.0, 0.0, 0.0, 0.0] # 4 values: jec center, jec up, jec down, statistical error
+
+        print 'Processing ',self.title
+        length = t.GetEntries()
+
+        for i, entry in enumerate(t):
+            t.GetEntry(i)
+
+            wt = entry.genHEPMCweight
+
+            try:
+                pass_ct = entry.nCleanedJetsPt30>=2 and 1.0/(1.0+entry.phjj_VAJHU_old/entry.pvbf_VAJHU_old)>0.5
+            except ZeroDivisionError:
+                pass_ct = False
+                pass
+            try:
+                pass_up = entry.nCleanedJetsPt30_jecUp>=2 and 1.0/(1.0+entry.phjj_VAJHU_old_up/entry.pvbf_VAJHU_old_up)>0.5
+            except ZeroDivisionError:
+                pass_up = False
+                pass
+            try:
+                pass_dn = entry.nCleanedJetsPt30_jecDn>=2 and 1.0/(1.0+entry.phjj_VAJHU_old_dn/entry.pvbf_VAJHU_old_dn)>0.5
+            except ZeroDivisionError:
+                pass_dn = False
+                pass
+
+            if (i+1) % 10000 == 0 or i+1 == length:
+                print (i+1), "/", length
+
+            for bin in bins:
+                n_total[bin] += wt
+                if bin.min < entry.ZZMass < bin.max:
+                    if pass_ct: n_pass_ct[bin] += wt
+                    if pass_up: n_pass_up[bin] += wt
+                    if pass_dn: n_pass_dn[bin] += wt
+
+        for bin in bins:
+            try:
+                eff_jec[bin][0] = n_pass_ct[bin]/n_total[bin] # jec center
+                eff_jec[bin][1] = n_pass_up[bin]/n_total[bin] # jec up
+                eff_jec[bin][2] = n_pass_dn[bin]/n_total[bin] # jec down
+                eff_jec[bin][3] = sqrt(n_pass_ct[bin]/(n_total[bin]-n_pass_ct[bin]))/(n_total[bin]-n_pass_ct[bin]) # statistical error: derived from sqrt(n_fail^2*d_n_pass+n_pass^2*d_n_fail)/(n_pass+n_fail)^2 
+            except ZeroDivisionError:
+                eff_jec[bin][0] = 0.0
+                eff_jec[bin][1] = 0.0
+                eff_jec[bin][2] = 0.0
+                eff_jec[bin][3] = 0.0
+                pass
+
+        return eff_jec
+
+
 class ZXPlot(Plot):
-    def __init__(self, color):
-        #Plot.__init__(self, "Z+X", color, "DataTrees_151202", maindir = "fromSimon", basename = "ZZ4lAnalysis_allData.root")
-        Plot.__init__(self, "Z+X", color, "AllData")
+    def __init__(self, color, style):
+        Plot.__init__(self, "Z+X", color, style, "AllData")
 
     def h(self, bins = None):
         if self._h is not None and bins is None:
@@ -152,6 +219,68 @@ class ZXPlot(Plot):
         else:
             self._h = h
         return self._h
+
+    def vbf_eff_jec(self, bins=None):
+        t = ROOT.TChain("CRZLLTree/candTree")
+        for filename in self.filenames:
+            t.Add(filename)
+
+        n_pass_ct = {}
+        n_pass_up = {}
+        n_pass_dn = {}
+        n_total = {}
+        eff_jec = {}
+        for bin in bins:
+            n_pass_ct[bin] = 0.0
+            n_pass_up[bin] = 0.0
+            n_pass_dn[bin] = 0.0
+            n_total[bin] = 0.0
+            eff_jec[bin] = [0.0, 0.0, 0.0, 0.0] # 4 values: jec center, jec up, jec down, statistical error
+
+        print 'Processing ',self.title
+        length = t.GetEntries()
+
+        for i, entry in enumerate(t):
+            t.GetEntry(i)
+
+            wt = ROOT.fakeRate13TeV(entry.LepPt.at(2),entry.LepEta.at(2),entry.LepLepId.at(2)) * ROOT.fakeRate13TeV(entry.LepPt.at(3),entry.LepEta.at(3),entry.LepLepId.at(3))
+
+            try:
+                pass_ct = entry.nCleanedJetsPt30>=2 and 1.0/(1.0+entry.phjj_VAJHU_old/entry.pvbf_VAJHU_old)>0.5
+            except ZeroDivisionError:
+                pass_ct = False
+                pass
+            try:
+                pass_up = entry.nCleanedJetsPt30_jecUp>=2 and 1.0/(1.0+entry.phjj_VAJHU_old_up/entry.pvbf_VAJHU_old_up)>0.5
+            except ZeroDivisionError:
+                pass_up = False
+                pass
+            try:
+                pass_dn = entry.nCleanedJetsPt30_jecDn>=2 and 1.0/(1.0+entry.phjj_VAJHU_old_dn/entry.pvbf_VAJHU_old_dn)>0.5
+            except ZeroDivisionError:
+                pass_dn = False
+                pass
+
+            if (i+1) % 10000 == 0 or i+1 == length:
+                print (i+1), "/", length
+
+            for bin in bins:
+                n_total[bin] += wt
+                if bin.min < entry.ZZMass < bin.max:
+                    if pass_ct: n_pass_ct[bin] += wt
+                    if pass_up: n_pass_up[bin] += wt
+                    if pass_dn: n_pass_dn[bin] += wt
+
+        for bin in bins:
+            try:
+                eff_jec[bin][0] = n_pass_ct[bin]/n_total[bin] # jec center
+                eff_jec[bin][1] = n_pass_up[bin]/n_total[bin] # jec up
+                eff_jec[bin][2] = n_pass_dn[bin]/n_total[bin] # jec down
+                eff_jec[bin][3] = sqrt(n_pass_ct[bin]/(n_total[bin]-n_pass_ct[bin]))/(n_total[bin]-n_pass_ct[bin]) # statistical error: derived from sqrt(n_fail^2*d_n_pass+n_pass^2*d_n_fail)/(n_pass+n_fail)^2 
+            except ZeroDivisionError:
+                pass
+
+        return eff_jec
 
 def makeDjetplots(*plots):
     c1 = ROOT.TCanvas()
@@ -218,7 +347,7 @@ def makeDjettable(massbins, *plots):
             if plot.title == "ttH" and bin.min >= 500: continue
             nbins[plot] += 1
             x[plot].append(bin.center)
-            y[plot].append(fraction[plot][bin])
+            y[plot].append()
             ex[plot].append(bin.error)
             ey[plot].append(integralerror[0])
         g[plot] = ROOT.TGraphErrors(nbins[plot], x[plot], y[plot], ex[plot], ey[plot])
@@ -252,9 +381,147 @@ def makeDjettable(massbins, *plots):
     print r"\end{tabular}"
     print r"\end{center}"
 
+def makeJECTable(massbins, *plots):
+    print massbins
+    bins = [Bin(massbins[i], massbins[i+1]) for i in range(len(massbins)-1)]
+    for a in bins: print a
+
+    eff = collections.OrderedDict()
+    x = {}
+    y = {}
+    ex = {}
+    ey = {}
+    nbins = {}
+    g = {}
+    mg = ROOT.TMultiGraph()
+
+    eff_unc_up = collections.OrderedDict()
+    eff_unc_dn = collections.OrderedDict()
+    jec_ex_up = {}
+    jec_ex_dn = {}
+    jec_ey_up = {}
+    jec_ey_dn = {}
+    jec_g = {}
+    jec_mg = ROOT.TMultiGraph()
+
+    legend = ROOT.TLegend(0.6, 0.4, 0.9, 0.8)
+    legend.SetLineStyle(0)
+    legend.SetLineColor(0)
+    legend.SetFillStyle(0)
+
+    for plot in plots:
+        x[plot] = array.array("d")
+        y[plot] = array.array("d")
+        ex[plot] = array.array("d")
+        ey[plot] = array.array("d")
+        nbins[plot] = 0
+        eff[plot] = collections.OrderedDict()
+        eff_unc_up[plot] = collections.OrderedDict()
+        eff_unc_dn[plot] = collections.OrderedDict()
+        jec_ex_up[plot] = array.array("d")
+        jec_ex_dn[plot] = array.array("d")
+        jec_ey_up[plot] = array.array("d")
+        jec_ey_dn[plot] = array.array("d")
+
+        eff_jec = plot.vbf_eff_jec(bins)
+        for bin in bins:
+            if plot.title == "ttH" and bin.min >= 500: continue
+            eff[plot][bin] = eff_jec[bin][0] # eff at jec center
+            try:
+                eff_unc_up[plot][bin] = abs(eff_jec[bin][1]-eff_jec[bin][0])/eff_jec[bin][0] # eff jec unc up
+                eff_unc_dn[plot][bin] = abs(eff_jec[bin][2]-eff_jec[bin][0])/eff_jec[bin][0] # eff jec unc dn
+            except ZeroDivisionError:
+                eff_unc_up[plot][bin] = 0.0
+                eff_unc_dn[plot][bin] = 0.0
+                pass
+            nbins[plot] += 1
+            x[plot].append(bin.center)
+            y[plot].append(eff[plot][bin])
+            ex[plot].append(bin.error)
+            ey[plot].append(eff_jec[bin][3]) # eff statistical error at jec center
+            jec_ex_up[plot].append(bin.error)
+            jec_ex_dn[plot].append(bin.error)
+            jec_ey_up[plot].append(abs(eff_jec[bin][1]-eff_jec[bin][0]))
+            jec_ey_dn[plot].append(abs(eff_jec[bin][2]-eff_jec[bin][0]))
+ 
+        g[plot] = ROOT.TGraphErrors(nbins[plot], x[plot], y[plot], ex[plot], ey[plot])
+        jec_g[plot] = ROOT.TGraphAsymmErrors(nbins[plot], x[plot], y[plot], jec_ex_dn[plot], jec_ex_up[plot], jec_ey_dn[plot], jec_ey_up[plot])
+        mg.Add(g[plot])
+        jec_mg.Add(jec_g[plot])
+        g[plot].SetLineColor(plot.color)
+        g[plot].SetMarkerColor(plot.color)
+        legend.AddEntry(g[plot], plot.title, "lp")
+        jec_g[plot].SetMarkerColorAlpha(plot.color, 0)
+        jec_g[plot].SetLineColorAlpha(plot.color, 0)
+        jec_g[plot].SetFillColor(plot.color)
+        jec_g[plot].SetFillStyle(plot.style)
+
+    legend.AddEntry(jec_g[plots[0]],"JEC uncertainties", "f")
+
+    c1 = ROOT.TCanvas()
+    pt =ROOT.TPaveText(0.1577181,0.9562937,0.9580537,0.9947552,"brNDC")
+    pt.SetBorderSize(0)
+    pt.SetTextAlign(12)
+    pt.SetFillStyle(0)
+    pt.SetTextFont(42)
+    pt.SetTextSize(0.03)
+    #text = pt.AddText(0.15,0.3,"CMS Preliminary")
+    text = pt.AddText(0.15,0.3,"CMS Preliminary")
+    text = pt.AddText(0.55,0.3,"#sqrt{s} = 13 TeV, L = 2.26 fb^{-1}")
+    pt.Draw()
+
+    mg.Draw("AP")
+    jec_mg.Draw("E2")
+    legend.Draw()
+    mg.GetXaxis().SetTitle("m_{4l}")
+    mg.GetYaxis().SetTitle("VBF-tag Efficiency")
+    mg.GetYaxis().SetRangeUser(0,0.5)
+    c1.SaveAs(plotloc+"VBFeffJec.png")
+    c1.SaveAs(plotloc+"VBFeffJec.eps")
+    c1.SaveAs(plotloc+"VBFeffJec.root")
+    c1.SaveAs(plotloc+"VBFeffJec.pdf")
+
+    print r"%%%%%%%%%%%%%% VBF-tag Efficiency %%%%%%%%%%%%%%%%%%%%%%%"
+    print r"\begin{center}"
+    print r"\begin{tabular}{ |%s| }" % ("|".join("c" * (len(plots)+1)))
+
+    #http://stackoverflow.com/a/9536084
+    header_format = " & ".join(["{:>15}"] * (len(plots) + 1)) + r" \\"
+    row_format = " & ".join(["{:>15}"] + [r"{:14.2f}\%"] * (len(plots))) + r"\\"
+    print r"\hline"
+    print header_format.format("", *plots)
+    for bin in bins:
+        print r"\hline"
+        print row_format.format(bin, *(eff[plot][bin]*100 for plot in plots))
+    print r"\hline"
+    print r"\end{tabular}"
+    print r"\end{center}"
+    print r"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+
+    print r"%%%%%%%%%%%%%% VBF-tag Efficiency with JEC %%%%%%%%%%%%%%%"
+    print r"\begin{center}"
+    print r"\begin{tabular}{ |%s| }" % ("|".join("c" * (len(plots)+1)))
+
+    #http://stackoverflow.com/a/9536084
+    header_format = " & ".join(["{:>15}"] * (len(plots) + 1)) + r" \\"
+    row_format = " & ".join(["{:>15}"] + [r"{:14.2f}\%"] * (len(plots))) + r"\\"
+    print r"\hline"
+    print header_format.format("", *plots)
+    for bin in bins:
+        print r"\hline"
+        print row_format.format(bin, *(eff[plot][bin]*100 for plot in plots))
+        print row_format.format('$\delta\epsilon(JEC-up)/\epsilon$', *(eff_unc_up[plot][bin]*100 for plot in plots))
+        print row_format.format('$\delta\epsilon(JEC-dn)/\epsilon$', *(eff_unc_dn[plot][bin]*100 for plot in plots))
+    print r"\hline"
+    print r"\end{tabular}"
+    print r"\end{center}"
+    print r"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
 if __name__ == "__main__":
     forplot = False
-    fortable = True
+    fortable = False
+    doJEC = True
     if forplot:
         plots = (
                  TreePlot("VBF",  1,              "VBFH125"),
@@ -269,17 +536,31 @@ if __name__ == "__main__":
                  ZXPlot(7),
                 )
         makeDjetplots(*plots)
-    elif fortable:
+    elif fortable or doJEC:
         plots = (
-                 TreePlot("VBF",  1,              "VBFH1000", "VBFH115", "VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900"),
-                 TreePlot("H+jj", 2,              "ggH1000", "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900"),
-                 TreePlot("ZH",   ROOT.kGreen-6,  "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400"),
-                 TreePlot("WH",   3,              "WplusH115", "WplusH120", "WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400"),
-                 TreePlot("ttH",  4,              "ttH125",     maindir = "root://lxcms03://data3/Higgs/160111_ggZZincomplete/"),
-                 TreePlot("qqZZ", 6,              "ZZTo4l"),
-                 TreePlot("ggZZ", ROOT.kViolet-1, "ggZZ2e2mu", "ggZZ2e2tau", "ggZZ2mu2tau",
-                                                #"ggZZ4e", "ggZZ4mu", "ggZZ4tau"
-                                              ),
-                 ZXPlot(7),
+
+                 TreePlot("VBF",  1, 3003, #"VBFH125", 
+                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
+                          ),
+                 TreePlot("H+jj", 2, 3004, # "ggH125",
+                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
+                          ),
+                 TreePlot("ZH",   ROOT.kGreen-6, 3005, #"ZH125", 
+                    "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400", 
+                           ),
+                 TreePlot("WH",   3,  3011, #"WplusH125", 
+                    "WplusH115", "WplusH120","WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400",
+                          ),
+                 TreePlot("ttH",  4, 3012,  "ttH125"),
+                 TreePlot("qqZZ", 6, 3013,  "ZZTo4l"),
+                 TreePlot("ggZZ", ROOT.kViolet-1, 3016, #"ggZZ2e2mu", 
+                    "ggZZ2e2mu", "ggZZ2e2tau", "ggZZ2mu2tau", "ggZZ4e", "ggZZ4mu", "ggZZ4tau", 
+                           ),
+                 ZXPlot(7, 3017),
                 )
-        makeDjettable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
+        if fortable:
+            makeDjettable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
+        elif doJEC:
+            makeJECTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
+            #makeJECTable([100, 150], *plots)
+
