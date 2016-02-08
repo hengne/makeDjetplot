@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import array
 import collections
 import loadlib
@@ -6,7 +8,7 @@ import ROOT
 import style
 
 class Plot(object):
-    maindir = "root://lxcms03://data3/Higgs/160121/"
+    maindir = "root://lxcms03://data3/Higgs/160203/"
     basename = "ZZ4lAnalysis.root"
     min = 0.
     max = 1.
