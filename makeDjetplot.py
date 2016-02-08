@@ -8,6 +8,9 @@ import ROOT
 import style
 
 
+#plotloc='"~/www/VBF/Djet/'
+plotloc=''
+
 class Plot(object):
     maindir = "root://lxcms03://data3/Higgs/160203/"
     basename = "ZZ4lAnalysis.root"
@@ -168,10 +171,10 @@ def makeDjetplots(*plots):
     hstack.GetXaxis().SetTitle("D_{jet}")
     hstack.GetYaxis().SetTitle("fraction of events / %s%s" % ((max-min)/bins, " "+units if units else ""))
     legend.Draw()
-    c1.SaveAs("~/www/VBF/Djet/Djet.png")
-    c1.SaveAs("~/www/VBF/Djet/Djet.eps")
-    c1.SaveAs("~/www/VBF/Djet/Djet.root")
-    c1.SaveAs("~/www/VBF/Djet/Djet.pdf")
+    c1.SaveAs(plotloc+"Djet.png")
+    c1.SaveAs(plotloc+"Djet.eps")
+    c1.SaveAs(plotloc+"Djet.root")
+    c1.SaveAs(plotloc+"Djet.pdf")
 
 class Bin(object):
     def __init__(self, min, max):
@@ -229,10 +232,10 @@ def makeDjettable(massbins, *plots):
     mg.GetXaxis().SetTitle("m_{4l}")
     mg.GetYaxis().SetTitle("fraction of events with D_{jet}>0.5")
     legend.Draw()
-    c1.SaveAs("~/www/VBF/Djet/fraction.png")
-    c1.SaveAs("~/www/VBF/Djet/fraction.eps")
-    c1.SaveAs("~/www/VBF/Djet/fraction.root")
-    c1.SaveAs("~/www/VBF/Djet/fraction.pdf")
+    c1.SaveAs(plotloc+"fraction.png")
+    c1.SaveAs(plotloc+"fraction.eps")
+    c1.SaveAs(plotloc+"fraction.root")
+    c1.SaveAs(plotloc+"fraction.pdf")
 
     print r"\begin{center}"
     print r"\begin{tabular}{ |%s| }" % ("|".join("c" * (len(plots)+1)))
@@ -250,8 +253,8 @@ def makeDjettable(massbins, *plots):
     print r"\end{center}"
 
 if __name__ == "__main__":
-    forplot = True
-    fortable = False
+    forplot = False
+    fortable = True
     if forplot:
         plots = (
                  TreePlot("VBF",  1,              "VBFH125"),
@@ -268,7 +271,7 @@ if __name__ == "__main__":
         makeDjetplots(*plots)
     elif fortable:
         plots = (
-                 TreePlot("VBF",  1,              "VBF1000", "VBF115", "VBF124", "VBF125", "VBF126", "VBF130", "VBF135", "VBF140", "VBF155", "VBF160", "VBF165", "VBF170", "VBF175", "VBF200", "VBF210", "VBF230", "VBF250", "VBF270", "VBF300", "VBF350", "VBF400", "VBF450", "VBF500", "VBF550", "VBF600", "VBF700", "VBF750", "VBF800", "VBF900"),
+                 TreePlot("VBF",  1,              "VBFH1000", "VBFH115", "VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900"),
                  TreePlot("H+jj", 2,              "ggH1000", "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900"),
                  TreePlot("ZH",   ROOT.kGreen-6,  "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400"),
                  TreePlot("WH",   3,              "WplusH115", "WplusH120", "WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400"),
