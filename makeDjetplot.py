@@ -7,6 +7,7 @@ import os
 import ROOT
 import style
 
+
 class Plot(object):
     maindir = "root://lxcms03://data3/Higgs/160203/"
     basename = "ZZ4lAnalysis.root"
@@ -95,7 +96,8 @@ class TreePlot(Plot):
 
 class ZXPlot(Plot):
     def __init__(self, color):
-        Plot.__init__(self, "Z+X", color, "DataTrees_151202", maindir = "fromSimon", basename = "ZZ4lAnalysis_allData.root")
+        #Plot.__init__(self, "Z+X", color, "DataTrees_151202", maindir = "fromSimon", basename = "ZZ4lAnalysis_allData.root")
+        Plot.__init__(self, "Z+X", color, "AllData")
 
     def h(self, bins = None):
         if self._h is not None and bins is None:
@@ -252,7 +254,7 @@ if __name__ == "__main__":
     fortable = False
     if forplot:
         plots = (
-                 TreePlot("VBF",  1,              "VBF125"),
+                 TreePlot("VBF",  1,              "VBFH125"),
                  TreePlot("H+jj", 2,              "ggH125"),
                  TreePlot("ZH",   ROOT.kGreen-6,  "ZH125"),
                  TreePlot("WH",   3,              "WplusH125"),
