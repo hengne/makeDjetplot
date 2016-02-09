@@ -104,12 +104,18 @@ class TreePlot(Plot):
             t.Add(filename)
 
         n_pass_ct = {}
+        n_fail_ct = {}
+        n_pass_ct_sumw2 = {}
+        n_fail_ct_sumw2 = {}
         n_pass_up = {}
         n_pass_dn = {}
         n_total = {}
         eff_jec = {}
         for bin in bins:
             n_pass_ct[bin] = 0.0
+            n_fail_ct[bin] = 0.0
+            n_pass_ct_sumw2[bin] = 0.0
+            n_fail_ct_sumw2[bin] = 0.0
             n_pass_up[bin] = 0.0
             n_pass_dn[bin] = 0.0
             n_total[bin] = 0.0
@@ -119,7 +125,7 @@ class TreePlot(Plot):
         length = t.GetEntries()
 
         for i, entry in enumerate(t):
-            t.GetEntry(i)
+            #t.GetEntry(i)
 
             wt = entry.genHEPMCweight
 
@@ -143,9 +149,14 @@ class TreePlot(Plot):
                 print (i+1), "/", length
 
             for bin in bins:
-                n_total[bin] += wt
                 if bin.min < entry.ZZMass < bin.max:
-                    if pass_ct: n_pass_ct[bin] += wt
+                    n_total[bin] += wt
+                    if pass_ct:
+                        n_pass_ct[bin] += wt
+                        n_pass_ct_sumw2[bin] +=wt*wt
+                    else:
+                        n_fail_ct[bin] += wt
+                        n_fail_ct_sumw2[bin] +=wt*wt
                     if pass_up: n_pass_up[bin] += wt
                     if pass_dn: n_pass_dn[bin] += wt
 
@@ -154,7 +165,7 @@ class TreePlot(Plot):
                 eff_jec[bin][0] = n_pass_ct[bin]/n_total[bin] # jec center
                 eff_jec[bin][1] = n_pass_up[bin]/n_total[bin] # jec up
                 eff_jec[bin][2] = n_pass_dn[bin]/n_total[bin] # jec down
-                eff_jec[bin][3] = sqrt(n_pass_ct[bin]/(n_total[bin]-n_pass_ct[bin]))/(n_total[bin]-n_pass_ct[bin]) # statistical error: derived from sqrt(n_fail^2*d_n_pass+n_pass^2*d_n_fail)/(n_pass+n_fail)^2 
+                eff_jec[bin][3] = sqrt((n_fail_ct[bin]**2*n_pass_ct_sumw2[bin]+n_pass_ct[bin]**2*n_fail_ct_sumw2[bin])/(n_fail_ct[bin]**4)) # statistical uncertainty deff^2=(nf^2*dnp^2+np^2*dnf^2)/nf^4
             except ZeroDivisionError:
                 eff_jec[bin][0] = 0.0
                 eff_jec[bin][1] = 0.0
@@ -226,12 +237,18 @@ class ZXPlot(Plot):
             t.Add(filename)
 
         n_pass_ct = {}
+        n_fail_ct = {}
+        n_pass_ct_sumw2 = {}
+        n_fail_ct_sumw2 = {}
         n_pass_up = {}
         n_pass_dn = {}
         n_total = {}
         eff_jec = {}
         for bin in bins:
             n_pass_ct[bin] = 0.0
+            n_fail_ct[bin] = 0.0
+            n_pass_ct_sumw2[bin] = 0.0
+            n_fail_ct_sumw2[bin] = 0.0
             n_pass_up[bin] = 0.0
             n_pass_dn[bin] = 0.0
             n_total[bin] = 0.0
@@ -241,7 +258,7 @@ class ZXPlot(Plot):
         length = t.GetEntries()
 
         for i, entry in enumerate(t):
-            t.GetEntry(i)
+            #t.GetEntry(i)
 
             wt = ROOT.fakeRate13TeV(entry.LepPt.at(2),entry.LepEta.at(2),entry.LepLepId.at(2)) * ROOT.fakeRate13TeV(entry.LepPt.at(3),entry.LepEta.at(3),entry.LepLepId.at(3))
 
@@ -265,9 +282,14 @@ class ZXPlot(Plot):
                 print (i+1), "/", length
 
             for bin in bins:
-                n_total[bin] += wt
                 if bin.min < entry.ZZMass < bin.max:
-                    if pass_ct: n_pass_ct[bin] += wt
+                    n_total[bin] += wt
+                    if pass_ct: 
+                        n_pass_ct[bin] += wt
+                        n_pass_ct_sumw2[bin] +=wt*wt
+                    else:
+                        n_fail_ct[bin] += wt
+                        n_fail_ct_sumw2[bin] +=wt*wt
                     if pass_up: n_pass_up[bin] += wt
                     if pass_dn: n_pass_dn[bin] += wt
 
@@ -276,7 +298,7 @@ class ZXPlot(Plot):
                 eff_jec[bin][0] = n_pass_ct[bin]/n_total[bin] # jec center
                 eff_jec[bin][1] = n_pass_up[bin]/n_total[bin] # jec up
                 eff_jec[bin][2] = n_pass_dn[bin]/n_total[bin] # jec down
-                eff_jec[bin][3] = sqrt(n_pass_ct[bin]/(n_total[bin]-n_pass_ct[bin]))/(n_total[bin]-n_pass_ct[bin]) # statistical error: derived from sqrt(n_fail^2*d_n_pass+n_pass^2*d_n_fail)/(n_pass+n_fail)^2 
+                eff_jec[bin][3] = sqrt((n_fail_ct[bin]**2*n_pass_ct_sumw2[bin]+n_pass_ct[bin]**2*n_fail_ct_sumw2[bin])/(n_fail_ct[bin]**4)) # statistical uncertainty deff^2=(nf^2*dnp^2+np^2*dnf^2)/nf^4
             except ZeroDivisionError:
                 pass
 
@@ -425,7 +447,6 @@ def makeJECTable(massbins, *plots):
 
         eff_jec = plot.vbf_eff_jec(bins)
         for bin in bins:
-            if plot.title == "ttH" and bin.min >= 500: continue
             eff[plot][bin] = eff_jec[bin][0] # eff at jec center
             try:
                 eff_unc_up[plot][bin] = abs(eff_jec[bin][1]-eff_jec[bin][0])/eff_jec[bin][0] # eff jec unc up
@@ -434,6 +455,7 @@ def makeJECTable(massbins, *plots):
                 eff_unc_up[plot][bin] = 0.0
                 eff_unc_dn[plot][bin] = 0.0
                 pass
+            if plot.title == "ttH" and bin.min >= 500: continue
             nbins[plot] += 1
             x[plot].append(bin.center)
             y[plot].append(eff[plot][bin])
@@ -445,16 +467,17 @@ def makeJECTable(massbins, *plots):
             jec_ey_dn[plot].append(abs(eff_jec[bin][2]-eff_jec[bin][0]))
  
         g[plot] = ROOT.TGraphErrors(nbins[plot], x[plot], y[plot], ex[plot], ey[plot])
-        jec_g[plot] = ROOT.TGraphAsymmErrors(nbins[plot], x[plot], y[plot], jec_ex_dn[plot], jec_ex_up[plot], jec_ey_dn[plot], jec_ey_up[plot])
         mg.Add(g[plot])
-        jec_mg.Add(jec_g[plot])
         g[plot].SetLineColor(plot.color)
         g[plot].SetMarkerColor(plot.color)
         legend.AddEntry(g[plot], plot.title, "lp")
-        jec_g[plot].SetMarkerColorAlpha(plot.color, 0)
-        jec_g[plot].SetLineColorAlpha(plot.color, 0)
-        jec_g[plot].SetFillColor(plot.color)
-        jec_g[plot].SetFillStyle(plot.style)
+        if plot.title != "Z+X" : 
+            jec_g[plot] = ROOT.TGraphAsymmErrors(nbins[plot], x[plot], y[plot], jec_ex_dn[plot], jec_ex_up[plot], jec_ey_dn[plot], jec_ey_up[plot])
+            jec_g[plot].SetMarkerColorAlpha(plot.color, 0)
+            jec_g[plot].SetLineColorAlpha(plot.color, 0)
+            jec_g[plot].SetFillColor(plot.color)
+            jec_g[plot].SetFillStyle(plot.style)
+            jec_mg.Add(jec_g[plot])
 
     legend.AddEntry(jec_g[plots[0]],"JEC uncertainties", "f")
 
@@ -468,14 +491,15 @@ def makeJECTable(massbins, *plots):
     #text = pt.AddText(0.15,0.3,"CMS Preliminary")
     text = pt.AddText(0.15,0.3,"CMS Preliminary")
     text = pt.AddText(0.55,0.3,"#sqrt{s} = 13 TeV, L = 2.26 fb^{-1}")
-    pt.Draw()
 
     mg.Draw("AP")
     jec_mg.Draw("E2")
     legend.Draw()
     mg.GetXaxis().SetTitle("m_{4l}")
     mg.GetYaxis().SetTitle("VBF-tag Efficiency")
-    mg.GetYaxis().SetRangeUser(0,0.5)
+    mg.GetYaxis().SetRangeUser(0,0.45)
+    pt.Draw()
+    c1.Update()
     c1.SaveAs(plotloc+"VBFeffJec.png")
     c1.SaveAs(plotloc+"VBFeffJec.eps")
     c1.SaveAs(plotloc+"VBFeffJec.root")
@@ -511,8 +535,9 @@ def makeJECTable(massbins, *plots):
     for bin in bins:
         print r"\hline"
         print row_format.format(bin, *(eff[plot][bin]*100 for plot in plots))
-        print row_format.format('$\delta\epsilon(JEC-up)/\epsilon$', *(eff_unc_up[plot][bin]*100 for plot in plots))
-        print row_format.format('$\delta\epsilon(JEC-dn)/\epsilon$', *(eff_unc_dn[plot][bin]*100 for plot in plots))
+        print row_format.format('$epsilon(JEC-up)$', *((eff[plot][bin]+eff_unc_up[plot][bin]*eff[plot][bin])*100 for plot in plots))
+        print row_format.format('$epsilon(JEC-dn)$', *((eff[plot][bin]-eff_unc_dn[plot][bin]*eff[plot][bin])*100 for plot in plots))
+        print row_format.format('$\delta\epsilon(JEC)/\epsilon$', *((eff_unc_up[plot][bin]+eff_unc_dn[plot][bin])/2*100 for plot in plots))
     print r"\hline"
     print r"\end{tabular}"
     print r"\end{center}"
@@ -539,9 +564,9 @@ if __name__ == "__main__":
     elif fortable or doJEC:
         plots = (
 
-                 TreePlot("VBF",  1, 3003, #"VBFH125", 
+                 TreePlot("VBF",  1, 3003, #"VBFH125","VBFH500",  
                     "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
-                          ),
+                         ),
                  TreePlot("H+jj", 2, 3004, # "ggH125",
                     "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
                           ),
