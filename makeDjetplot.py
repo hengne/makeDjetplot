@@ -488,9 +488,9 @@ def makeJECTable(massbins, *plots):
     pt.SetFillStyle(0)
     pt.SetTextFont(42)
     pt.SetTextSize(0.03)
+    text = pt.AddText(0.15,0.3,"CMS Simulation       #sqrt{s} = 13 TeV")
     #text = pt.AddText(0.15,0.3,"CMS Preliminary")
-    text = pt.AddText(0.15,0.3,"CMS Preliminary")
-    text = pt.AddText(0.55,0.3,"#sqrt{s} = 13 TeV, L = 2.26 fb^{-1}")
+    #text = pt.AddText(0.55,0.3,"#sqrt{s} = 13 TeV, L = 2.26 fb^{-1}")
 
     mg.Draw("AP")
     jec_mg.Draw("E2")
@@ -504,6 +504,22 @@ def makeJECTable(massbins, *plots):
     c1.SaveAs(plotloc+"VBFeffJec.eps")
     c1.SaveAs(plotloc+"VBFeffJec.root")
     c1.SaveAs(plotloc+"VBFeffJec.pdf")
+
+    c2 = ROOT.TCanvas()
+    mg.Draw("AP")
+    jec_mg.Draw("E2")
+    legend.Draw()
+    mg.GetXaxis().SetTitle("m_{4l}")
+    mg.GetYaxis().SetTitle("VBF-tag Efficiency")
+    mg.GetYaxis().SetRangeUser(0,0.45)
+    mg.GetXaxis().SetRangeUser(100.0, 200.0)
+    pt.Draw()
+    c2.Update()
+    c2.SaveAs(plotloc+"VBFeffJec100.png")
+    c2.SaveAs(plotloc+"VBFeffJec100.eps")
+    c2.SaveAs(plotloc+"VBFeffJec100.root")
+    c2.SaveAs(plotloc+"VBFeffJec100.pdf")
+
 
     print r"%%%%%%%%%%%%%% VBF-tag Efficiency %%%%%%%%%%%%%%%%%%%%%%%"
     print r"\begin{center}"
