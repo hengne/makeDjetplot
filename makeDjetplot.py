@@ -403,7 +403,9 @@ def makeDjettable(massbins, *plots):
     print r"\end{tabular}"
     print r"\end{center}"
 
-def makeJECTable(massbins, *plots):
+def makeJECTable(massbins, *plots, output='makeJEC.root'):
+
+    outfile = ROOT.TFile(output, "RECREATE") 
     print massbins
     bins = [Bin(massbins[i], massbins[i+1]) for i in range(len(massbins)-1)]
     for a in bins: print a
@@ -416,6 +418,7 @@ def makeJECTable(massbins, *plots):
     nbins = {}
     g = {}
     mg = ROOT.TMultiGraph()
+    mg.SetName('mg')
 
     eff_unc_up = collections.OrderedDict()
     eff_unc_dn = collections.OrderedDict()
@@ -425,8 +428,10 @@ def makeJECTable(massbins, *plots):
     jec_ey_dn = {}
     jec_g = {}
     jec_mg = ROOT.TMultiGraph()
+    jec_mg.SetName('mg_jec')
 
     legend = ROOT.TLegend(0.6, 0.4, 0.9, 0.8)
+    legend.SetName("legend")
     legend.SetLineStyle(0)
     legend.SetLineColor(0)
     legend.SetFillStyle(0)
@@ -467,12 +472,14 @@ def makeJECTable(massbins, *plots):
             jec_ey_dn[plot].append(abs(eff_jec[bin][2]-eff_jec[bin][0]))
  
         g[plot] = ROOT.TGraphErrors(nbins[plot], x[plot], y[plot], ex[plot], ey[plot])
+        g[plot].SetName('gr_'+plot.title)
         mg.Add(g[plot])
         g[plot].SetLineColor(plot.color)
         g[plot].SetMarkerColor(plot.color)
         legend.AddEntry(g[plot], plot.title, "lp")
         if plot.title != "Z+X" : 
             jec_g[plot] = ROOT.TGraphAsymmErrors(nbins[plot], x[plot], y[plot], jec_ex_dn[plot], jec_ex_up[plot], jec_ey_dn[plot], jec_ey_up[plot])
+            jec_g[plot].SetName('gr_jec_'+plot.title)
             jec_g[plot].SetMarkerColorAlpha(plot.color, 0)
             jec_g[plot].SetLineColorAlpha(plot.color, 0)
             jec_g[plot].SetFillColor(plot.color)
@@ -481,8 +488,9 @@ def makeJECTable(massbins, *plots):
 
     legend.AddEntry(jec_g[plots[0]],"JEC uncertainties", "f")
 
-    c1 = ROOT.TCanvas()
+    c1 = ROOT.TCanvas('c1','c1')
     pt =ROOT.TPaveText(0.1577181,0.9562937,0.9580537,0.9947552,"brNDC")
+    pt.SetName('pt_cms')
     pt.SetBorderSize(0)
     pt.SetTextAlign(12)
     pt.SetFillStyle(0)
@@ -505,7 +513,18 @@ def makeJECTable(massbins, *plots):
     c1.SaveAs(plotloc+"VBFeffJec.root")
     c1.SaveAs(plotloc+"VBFeffJec.pdf")
 
-    c2 = ROOT.TCanvas()
+    # write to file
+    outfile.cd()
+    c1.Write()
+    mg.Write()
+    mg_jec.Write()
+    legend.Write()
+    pt.Write()
+    for plot in plots:
+        mg[plot].Write()
+        mg_jec[plot].Write()
+
+    c2 = ROOT.TCanvas('c2','c2')
     mg.Draw("AP")
     jec_mg.Draw("E2")
     legend.Draw()
@@ -580,28 +599,32 @@ if __name__ == "__main__":
     elif fortable or doJEC:
         plots = (
 
-                 TreePlot("VBF",  1, 3003, #"VBFH125","VBFH500",  
-                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
+                 TreePlot("VBF",  1, 3003, 
+                    "VBFH125",
+#                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
                          ),
-                 TreePlot("H+jj", 2, 3004, # "ggH125",
-                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
-                          ),
-                 TreePlot("ZH",   ROOT.kGreen-6, 3005, #"ZH125", 
-                    "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400", 
-                           ),
-                 TreePlot("WH",   3,  3011, #"WplusH125", 
-                    "WplusH115", "WplusH120","WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400",
-                          ),
-                 TreePlot("ttH",  4, 3012,  "ttH125"),
-                 TreePlot("qqZZ", 6, 3013,  "ZZTo4l"),
-                 TreePlot("ggZZ", ROOT.kViolet-1, 3016, #"ggZZ2e2mu", 
-                    "ggZZ2e2mu", "ggZZ2e2tau", "ggZZ2mu2tau", "ggZZ4e", "ggZZ4mu", "ggZZ4tau", 
-                           ),
-                 ZXPlot(7, 3017),
+#                 TreePlot("ggH", 2, 3004, 
+#                    "ggH125",
+#                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
+#                          ),
+#                 TreePlot("ZH",   ROOT.kGreen-6, 3005, 
+#                   "ZH125", 
+#                    "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400", 
+#                           ),
+#                 TreePlot("WH",   3,  3011,  
+#                  "WplusH125", 
+#                    "WplusH115", "WplusH120","WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400",
+#                          ),
+#                 TreePlot("ttH",  4, 3012,  "ttH125"),
+#                 TreePlot("qqZZ", 6, 3013,  "ZZTo4l"),
+#                 TreePlot("ggZZ", ROOT.kViolet-1, 3016, #"ggZZ2e2mu", 
+#                    "ggZZ2e2mu", "ggZZ2e2tau", "ggZZ2mu2tau", "ggZZ4e", "ggZZ4mu", "ggZZ4tau", 
+#                           ),
+#                 ZXPlot(7, 3017),
                 )
         if fortable:
             makeDjettable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
         elif doJEC:
-            makeJECTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
-            #makeJECTable([100, 150], *plots)
+#            makeJECTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
+            makeJECTable([100, 150], *plots, output='outjec.root')
 
