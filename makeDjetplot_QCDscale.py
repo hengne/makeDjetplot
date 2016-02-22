@@ -301,7 +301,7 @@ class TreePlot(Plot):
                 print ' ['+str(i)+']['+str(ib)+']:  '+str(eff_qcd[bin][ib])+'  '+str(eff_qcd_err[bin][ib])
         print '#####################################################'
 
-        return eff_qcd,eff_qcd_err
+        return eff_ct,eff_ct_err,eff_qcd,eff_qcd_err
 
 
 class ZXPlot(Plot):
@@ -431,6 +431,136 @@ class ZXPlot(Plot):
                 pass
 
         return eff_jec
+
+
+    def vbf_eff_qcd(self, bins=None):
+        # QCD scale variations 
+        # +-------+---------------+-------------------+
+        # | Index | LHE Weight ID |  LHE Weight Name  |
+        # +-------+---------------+-------------------+
+        # |   0   |      1001     |    muR=1 muF=1    |
+        # |   1   |      1002     |    muR=1 muF=2    |
+        # |   2   |      1003     |   muR=1 muF=0.5   |
+        # |   3   |      1004     |    muR=2 muF=1    |
+        # |   4   |      1005     |    muR=2 muF=2    |
+        # |   5   |      1006     |   muR=2 muF=0.5   |
+        # |   6   |      1007     |   muR=0.5 muF=1   |
+        # |   7   |      1008     |   muR=0.5 muF=2   |
+        # |   8   |      1009     |  muR=0.5 muF=0.5  |
+        # +-------+---------------+-------------------+ 
+
+
+        t = ROOT.TChain("ZZTree/candTree")
+        for filename in self.filenames:
+            t.Add(filename)
+
+        n_pass_ct = {}
+        n_fail_ct = {}
+        n_pass_ct_sumw2 = {}
+        n_fail_ct_sumw2 = {}
+        eff_ct = {}
+        eff_ct_err = {}
+        n_pass_qcd = {}
+        n_fail_qcd = {}
+        n_pass_qcd_sumw2 = {}
+        n_fail_qcd_sumw2 = {}
+        eff_qcd = {}
+        eff_qcd_err = {}
+        for bin in bins:
+            n_pass_ct[bin] = 0.0
+            n_fail_ct[bin] = 0.0
+            n_pass_ct_sumw2[bin] = 0.0
+            n_fail_ct_sumw2[bin] = 0.0
+            eff_ct[bin] = 0.0
+            eff_ct_err[bin] = 0.0
+            n_pass_qcd[bin] = [0.0 for i in range(9)] # n pass with weights for 9 QCD scale variations.
+            n_fail_qcd[bin] = [0.0 for i in range(9)] # n fail with weights for 9 variations
+            n_pass_qcd_sumw2[bin] = [0.0 for i in range(9)] # n pass with weights for 9 QCD scale variations.
+            n_fail_qcd_sumw2[bin] = [0.0 for i in range(9)] # n fail with weights for 9 variations
+            eff_qcd[bin] = [0.0 for i in range(9)] # eff for 9 variations
+            eff_qcd_err[bin] = [0.0 for i in range(9)] # eff errors for 9 variations
+
+        print 'Processing ',self.title
+        length = t.GetEntries()
+
+        for i, entry in enumerate(t):
+            #t.GetEntry(i)
+
+            # get weights
+            wt = ROOT.fakeRate13TeV(entry.LepPt.at(2),entry.LepEta.at(2),entry.LepLepId.at(2)) * ROOT.fakeRate13TeV(entry.LepPt.at(3),entry.LepEta.at(3),entry.LepLepId.at(3))
+
+            # qcd scale weights
+            wts = []
+            wts.append(entry.LHEweight_QCDscale_muR1_muF1)
+            wts.append(entry.LHEweight_QCDscale_muR1_muF2)
+            wts.append(entry.LHEweight_QCDscale_muR1_muF0p5)
+            wts.append(entry.LHEweight_QCDscale_muR2_muF1)
+            wts.append(entry.LHEweight_QCDscale_muR2_muF2)
+            wts.append(entry.LHEweight_QCDscale_muR2_muF0p5)
+            wts.append(entry.LHEweight_QCDscale_muR0p5_muF1)
+            wts.append(entry.LHEweight_QCDscale_muR0p5_muF2)
+            wts.append(entry.LHEweight_QCDscale_muR0p5_muF0p5)
+
+            # check pass cut or not
+            try:
+                pass_ct = entry.nCleanedJetsPt30>=2 and 1.0/(1.0+entry.phjj_VAJHU_old/entry.pvbf_VAJHU_old)>0.5
+            except ZeroDivisionError:
+                pass_ct = False
+                pass
+
+            if (i+1) % 10000 == 0 or i+1 == length:
+                print (i+1), "/", length
+
+            for bin in bins:
+                if bin.min < entry.ZZMass < bin.max:
+                    if pass_ct:
+                        n_pass_ct[bin] += wt
+                        n_pass_ct_sumw2[bin] +=wt*wt
+                        for ibb in range(9): 
+                            n_pass_qcd[bin][ibb] += wt*wts[ibb]
+                            n_pass_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
+                    else:
+                        n_fail_ct[bin] += wt
+                        n_fail_ct_sumw2[bin] +=wt*wt
+                        for ibb in range(9):
+                            n_fail_qcd[bin][ibb] += wt*wts[ibb]
+                            n_fail_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
+
+        for bin in bins:
+            try:
+                eff_ct[bin] = n_pass_ct[bin]/(n_pass_ct[bin]+n_fail_ct[bin])
+                eff_ct_err[bin] = sqrt((n_fail_ct[bin]**2*n_pass_ct_sumw2[bin]+n_pass_ct[bin]**2*n_fail_ct_sumw2[bin])/(n_fail_ct[bin]**4))
+            except ZeroDivisionError:
+                eff_ct[bin] = 0.0
+                eff_ct_err[bin] = 0.0
+                pass
+
+            # eff for 9 variations
+            for ibb in range(9):
+                try:
+                    eff_qcd[bin][ibb] = n_pass_qcd[bin][ibb]/(n_pass_qcd[bin][ibb]+n_fail_qcd[bin][ibb])
+                    eff_qcd_err[bin][ibb] = sqrt((n_fail_qcd[bin][ibb]**2*n_pass_qcd_sumw2[bin][ibb]+n_pass_qcd[bin][ibb]**2*n_fail_qcd_sumw2[bin][ibb])/(n_fail_qcd[bin][ibb]**4))
+                except ZeroDivisionError:
+                    eff_qcd[bin][ibb] = 0.0
+                    eff_qcd_err[bin][ibb] = 0.0
+                    pass
+            #
+
+        print '#####################################################'
+        print 'bin       eff_ct[bin]    eff_qcd[bin][0]   eff_ct_err[bin]   eff_qcd_err[bin][0]  '        
+        for i,bin in enumerate(bins):
+            print ' '+str(i)+'  '+str(eff_ct[bin])+'  '+str(eff_qcd[bin][0])+'  '+str(eff_ct_err[bin])+'  '+str(eff_qcd_err[bin][0])
+        print '#####################################################'
+
+        print '#####################################################'
+        print ' [bin][i] :     eff_qcd[bin][i]     eff_qcd_err[bin][i]  '
+        for i,bin in enumerate(bins):
+            for ib in range(9):
+                print ' ['+str(i)+']['+str(ib)+']:  '+str(eff_qcd[bin][ib])+'  '+str(eff_qcd_err[bin][ib])
+        print '#####################################################'
+
+        return eff_ct,eff_ct_err,eff_qcd,eff_qcd_err
+
 
 def makeDjetplots(*plots):
     c1 = ROOT.TCanvas()
@@ -761,11 +891,11 @@ def makeQCDTable(massbins, outroot,  *plots):
         unc_ey_up[plot] = array.array("d")
         unc_ey_dn[plot] = array.array("d")
 
-        eff_qcd,eff_qcd_err = plot.vbf_eff_qcd(bins)
+        eff_ct,eff_ct_err,eff_qcd,eff_qcd_err = plot.vbf_eff_qcd(bins)
 
         for bin in bins:
-            eff[plot][bin] = eff_qcd[bin][0] # eff at QCD scale center
-            eff_err[plot][bin] = eff_qcd_err[bin][0] # eff stats.error at QCD scale center
+            eff[plot][bin] = eff_ct[bin] # eff at QCD scale center
+            eff_err[plot][bin] = eff_ct_err[bin] # eff stats.error at QCD scale center
             eff_up[plot][bin] = max(eff_qcd[bin]) # biggest  eff in 9 qcd scale variations
             eff_dn[plot][bin] = min(eff_qcd[bin]) # smallest eff in 9 qcd scale variations
             eff_unc_up[plot][bin] = abs(eff_up[plot][bin]-eff[plot][bin])
@@ -882,7 +1012,7 @@ def makeQCDTable(massbins, outroot,  *plots):
         print row_format.format(bin, *(eff[plot][bin]*100 for plot in plots))
         print row_format.format('$epsilon(up)$', *(eff_up[plot][bin]*100 for plot in plots))
         print row_format.format('$epsilon(dn)$', *(eff_dn[plot][bin]*100 for plot in plots))
-        print row_format.format('$\delta\epsilon(QCD)/\epsilon$', *((eff_unc_up[plot][bin]+eff_unc_dn[plot][bin])/2.0/eff[plot][bin]*100 for plot in plots))
+        print row_format.format('$\delta\epsilon(QCD)/\epsilon$', *((0.0 if eff[plot][bin]<=0 else (eff_unc_up[plot][bin]+eff_unc_dn[plot][bin])/2.0/eff[plot][bin]*100) for plot in plots))
     print r"\hline"
     print r"\end{tabular}"
     print r"\end{center}"
