@@ -958,10 +958,10 @@ def makeQCDTable(massbins, outroot,  *plots):
     mg.GetYaxis().SetRangeUser(0,0.45)
     pt.Draw()
     c1.Update()
-    c1.SaveAs(plotloc+"VBFeffQCD.png")
-    c1.SaveAs(plotloc+"VBFeffQCD.eps")
-    c1.SaveAs(plotloc+"VBFeffQCD.root")
-    c1.SaveAs(plotloc+"VBFeffQCD.pdf")
+    c1.SaveAs(plotloc+"VBFeffQCDall.png")
+    c1.SaveAs(plotloc+"VBFeffQCDall.eps")
+    c1.SaveAs(plotloc+"VBFeffQCDall.root")
+    c1.SaveAs(plotloc+"VBFeffQCDall.pdf")
 
     # write to file
     outfile.cd()
@@ -984,10 +984,10 @@ def makeQCDTable(massbins, outroot,  *plots):
     mg.GetXaxis().SetRangeUser(100.0, 200.0)
     pt.Draw()
     c2.Update()
-    c2.SaveAs(plotloc+"VBFeffQCD100.png")
-    c2.SaveAs(plotloc+"VBFeffQCD100.eps")
-    c2.SaveAs(plotloc+"VBFeffQCD100.root")
-    c2.SaveAs(plotloc+"VBFeffQCD100.pdf")
+    c2.SaveAs(plotloc+"VBFeffQCD100all.png")
+    c2.SaveAs(plotloc+"VBFeffQCD100all.eps")
+    c2.SaveAs(plotloc+"VBFeffQCD100all.root")
+    c2.SaveAs(plotloc+"VBFeffQCD100all.pdf")
 
 
     print r"%%%%%%%%%%%%%% VBF-tag Efficiency %%%%%%%%%%%%%%%%%%%%%%%"
@@ -1070,20 +1070,20 @@ if __name__ == "__main__":
         plots = (
 
                  TreePlot("VBF",  1, 3003, 
-                    "VBFH125",
-#                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
+#                    "VBFH125",
+                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
                          ),
                  TreePlot("ggH", 2, 3003, 
-                    "ggH125",
-#                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
+#                    "ggH125",
+                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
                           ),
                  TreePlot("ZH",   ROOT.kGreen-6, 3003, 
-                   "ZH125", 
-#                    "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400", 
+#                   "ZH125", 
+                    "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400", 
                            ),
                  TreePlot("WH",   3,  3003,  
-                  "WplusH125", 
-#                    "WplusH115", "WplusH120","WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400",
+#                  "WplusH125", 
+                    "WplusH115", "WplusH120","WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400",
                           ),
                  TreePlot("ttH",  4, 3003,  "ttH125"),
                  TreePlot("qqZZ", 6, 3003,  "ZZTo4l"),
@@ -1098,6 +1098,6 @@ if __name__ == "__main__":
         elif doJEC:
             makeJECTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
         elif doQCD:
-#            makeQCDTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
-            makeQCDTable([100, 500],  'outqcd.root', *plots)
+            makeQCDTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], 'outqcd_all.root', *plots)
+#            makeQCDTable([100, 500],  'outqcd.root', *plots)
 
