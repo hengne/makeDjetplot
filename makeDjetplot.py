@@ -12,7 +12,8 @@ from math import *
 plotloc=''
 
 class Plot(object):
-    maindir = "root://lxcms03://data3/Higgs/160203/"
+    #maindir = "root://lxcms03://data3/Higgs/160203/"
+    maindir = "root://lxcms03://data3/Higgs/160225/"
     basename = "ZZ4lAnalysis.root"
     min = 0.
     max = 1.
@@ -127,7 +128,8 @@ class TreePlot(Plot):
         for i, entry in enumerate(t):
             #t.GetEntry(i)
 
-            wt = entry.genHEPMCweight
+            #wt = entry.genHEPMCweight * entry.PUWeight * entry.dataMCWeight
+            wt = entry.genHEPMCweight #* entry.PUWeight * entry.dataMCWeight
 
             try:
                 pass_ct = entry.nCleanedJetsPt30>=2 and 1.0/(1.0+entry.phjj_VAJHU_old/entry.pvbf_VAJHU_old)>0.5
