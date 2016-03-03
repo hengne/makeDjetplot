@@ -20,7 +20,8 @@ def latex_float(f):
         return float_str
 
 class Plot(object):
-    maindir = "root://lxcms03://data3/Higgs/160203/"
+    #maindir = "root://lxcms03://data3/Higgs/160203/"
+    maindir = "root://lxcms03://data3/Higgs/160225/"
     basename = "ZZ4lAnalysis.root"
     min = 0.
     max = 1.
@@ -238,7 +239,8 @@ class TreePlot(Plot):
             #t.GetEntry(i)
 
             # get weights
-            wt = entry.genHEPMCweight
+            wt = entry.genHEPMCweight * entry.PUWeight * entry.dataMCWeight
+            wt1 = entry.PUWeight * entry.dataMCWeight
 
             # qcd scale weights
             wts = []
@@ -268,14 +270,14 @@ class TreePlot(Plot):
                         n_pass_ct[bin] += wt
                         n_pass_ct_sumw2[bin] +=wt*wt
                         for ibb in range(9): 
-                            n_pass_qcd[bin][ibb] += wt*wts[ibb]
-                            n_pass_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
+                            n_pass_qcd[bin][ibb] += wts[ibb]*wt1
+                            n_pass_qcd_sumw2[bin][ibb] += wts[ibb]*wts[ibb]*wt1*wt1
                     else:
                         n_fail_ct[bin] += wt
                         n_fail_ct_sumw2[bin] +=wt*wt
                         for ibb in range(9):
-                            n_fail_qcd[bin][ibb] += wt*wts[ibb]
-                            n_fail_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
+                            n_fail_qcd[bin][ibb] += wts[ibb]*wt1
+                            n_fail_qcd_sumw2[bin][ibb] += wts[ibb]*wts[ibb]*wt1*wt1
 
         for bin in bins:
             try:
@@ -290,6 +292,7 @@ class TreePlot(Plot):
             for ibb in range(9):
                 try:
                     eff_qcd[bin][ibb] = n_pass_qcd[bin][ibb]/(n_pass_qcd[bin][ibb]+n_fail_qcd[bin][ibb])
+                    #eff_qcd[bin][ibb] = n_pass_qcd[bin][ibb]/(n_pass_qcd[bin][ibb]+n_fail_qcd[bin][0])
                     eff_qcd_err[bin][ibb] = sqrt((n_fail_qcd[bin][ibb]**2*n_pass_qcd_sumw2[bin][ibb]+n_pass_qcd[bin][ibb]**2*n_fail_qcd_sumw2[bin][ibb])/(n_fail_qcd[bin][ibb]**4))
                 except ZeroDivisionError:
                     eff_qcd[bin][ibb] = 0.0
@@ -309,7 +312,15 @@ class TreePlot(Plot):
                 print ' ['+str(i)+']['+str(ib)+']:  '+str(eff_qcd[bin][ib])+'  '+str(eff_qcd_err[bin][ib])
         print '#####################################################'
 
-        return eff_ct,eff_ct_err,eff_qcd,eff_qcd_err
+
+        print '#####################################################'
+        print ' [bin][i] :     n_pass_qcd[bin][i]     n_fail_qcd[bin][i]   n_total_qcd[bin][i]  n_total_noweight[bin] '
+        for i,bin in enumerate(bins):
+            for ib in [0,1,2,3,4,8]:
+                print ' ['+str(i)+']['+str(ib)+']:  '+str(n_pass_qcd[bin][ib])+'  '+str(n_fail_qcd[bin][ib])+'  '+str(n_pass_qcd[bin][ib]+n_fail_qcd[bin][ib])+'  '+str(n_pass_ct[bin]+n_fail_ct[bin])
+        print '#####################################################'
+
+        return eff_ct,eff_ct_err,eff_qcd,eff_qcd_err,n_pass_qcd,n_fail_qcd,n_pass_ct,n_fail_ct,n_pass_qcd_sumw2,n_pass_ct_sumw2
 
 
 class ZXPlot(Plot):
@@ -864,10 +875,22 @@ def makeQCDTable(massbins, outroot,  *plots):
     mg = ROOT.TMultiGraph()
     mg.SetName('mg')
 
+    n_pass_up = collections.OrderedDict()
+    n_pass_dn = collections.OrderedDict()
+    n_pass_md = collections.OrderedDict()
+    n_pass = collections.OrderedDict()
+    n_total_up = collections.OrderedDict()
+    n_total_dn = collections.OrderedDict()
+    n_total_md = collections.OrderedDict()
+    n_total = collections.OrderedDict()
     eff_up = collections.OrderedDict()
     eff_dn = collections.OrderedDict()
+    eff_up_err = collections.OrderedDict()
+    eff_dn_err = collections.OrderedDict()
     eff_unc_up = collections.OrderedDict()
     eff_unc_dn = collections.OrderedDict()
+    eff_rel_unc = collections.OrderedDict()
+    eff_rel_unc_err = collections.OrderedDict()
     unc_ex_up = {}
     unc_ex_dn = {}
     unc_ey_up = {}
@@ -892,14 +915,27 @@ def makeQCDTable(massbins, outroot,  *plots):
         eff_err[plot] = collections.OrderedDict()
         eff_up[plot] = collections.OrderedDict()
         eff_dn[plot] = collections.OrderedDict()
+        eff_up_err[plot] = collections.OrderedDict()
+        eff_dn_err[plot] = collections.OrderedDict()
         eff_unc_up[plot] = collections.OrderedDict()
         eff_unc_dn[plot] = collections.OrderedDict()
+        eff_rel_unc[plot] = collections.OrderedDict()
+        eff_rel_unc_err[plot] = collections.OrderedDict()
         unc_ex_up[plot] = array.array("d")
         unc_ex_dn[plot] = array.array("d")
         unc_ey_up[plot] = array.array("d")
         unc_ey_dn[plot] = array.array("d")
 
-        eff_ct,eff_ct_err,eff_qcd,eff_qcd_err = plot.vbf_eff_qcd(bins)
+        n_pass_up[plot] = collections.OrderedDict()
+        n_pass_dn[plot] = collections.OrderedDict()
+        n_pass_md[plot] = collections.OrderedDict()
+        n_pass[plot] = collections.OrderedDict()
+        n_total_up[plot] = collections.OrderedDict()
+        n_total_dn[plot] = collections.OrderedDict()
+        n_total_md[plot] = collections.OrderedDict()
+        n_total[plot] = collections.OrderedDict()
+
+        eff_ct,eff_ct_err,eff_qcd,eff_qcd_err,n_pass_qcd,n_fail_qcd,n_pass_ct,n_fail_ct,n_pass_qcd_sumw2,n_pass_ct_sumw2 = plot.vbf_eff_qcd(bins)
 
         for bin in bins:
             eff[plot][bin] = eff_ct[bin] # eff at QCD scale center
@@ -908,6 +944,14 @@ def makeQCDTable(massbins, outroot,  *plots):
             #eff_dn[plot][bin] = min(eff_qcd[bin]) # smallest eff in 9 qcd scale variations
             eff_up[plot][bin] = max(eff_qcd[bin][i] for i in range(9) if i!=5 and i!=7) # biggest  eff in 9 qcd scale variations, except 5 (2,0.5) and 7 (0.5,2)
             eff_dn[plot][bin] = min(eff_qcd[bin][i] for i in range(9) if i!=5 and i!=7) # smallest eff in 9 qcd scale variations, except 5 (2,0.5) and 7 (0.5,2)
+            n_pass_up[plot][bin] = max(n_pass_qcd[bin][i] for i in range(9) if i!=5 and i!=7) 
+            n_pass_dn[plot][bin] = min(n_pass_qcd[bin][i] for i in range(9) if i!=5 and i!=7) 
+            n_pass_md[plot][bin] = n_pass_qcd[bin][0] 
+            n_pass[plot][bin] = n_pass_ct[bin]
+            n_total_up[plot][bin] = max(n_pass_qcd[bin][i]+n_fail_qcd[bin][i] for i in range(9) if i!=5 and i!=7)
+            n_total_dn[plot][bin] = min(n_pass_qcd[bin][i]+n_fail_qcd[bin][i] for i in range(9) if i!=5 and i!=7)
+            n_total_md[plot][bin] = n_pass_qcd[bin][0]+n_fail_qcd[bin][0]                                        
+            n_total[plot][bin] = n_pass_ct[bin]+n_fail_ct[bin] 
             eff_unc_up[plot][bin] = abs(eff_up[plot][bin]-eff[plot][bin]) if eff_up[plot][bin]>0.0 else 0.0
             eff_unc_dn[plot][bin] = abs(eff_dn[plot][bin]-eff[plot][bin]) if eff_dn[plot][bin]>0.0 else 0.0
             if plot.title == "ttH" and bin.min >= 500: continue
@@ -920,7 +964,32 @@ def makeQCDTable(massbins, outroot,  *plots):
             unc_ex_dn[plot].append(bin.error)
             unc_ey_up[plot].append(eff_unc_up[plot][bin])
             unc_ey_dn[plot].append(eff_unc_dn[plot][bin])
- 
+
+            # calculate uncertainties of qcd scale uncertainty
+            index_up = eff_qcd[bin].index(max(eff_qcd[bin][i] for i in range(9) if i!=5 and i!=7))
+            index_dn = eff_qcd[bin].index(min(eff_qcd[bin][i] for i in range(9) if i!=5 and i!=7))
+            eff_up_err[plot][bin] = eff_qcd_err[bin][index_up]
+            eff_dn_err[plot][bin] = eff_qcd_err[bin][index_dn]
+            # deff/eff = f = [ Np(up)-Np(dn) ]/[2*Np(c)] 
+            # this assumes the denorminator does not change with up/dn scales, not correct, but approximitely correct for error propagation.
+            # three statistical independent parts: x = Np(c)-Np(dn), y = Np(up)-Np(c), z = Np(dn)
+            # f^2 = [ (z-y)^2*dx^2 + (x+z)^2*dy^2 + (x+y)^2*dz^2 ] / [ 4* (x+z)^4 ]
+            # dx^2 = sumw2p(c)  - sumw2p(dn) 
+            # dy^2 = sumw2p(up) - sumw2p(c)
+            # dz^2 = sumw2p(dn)
+            # z-y = Np(c) + Np(dn) - Np(up)
+            # x+z = Np(c)
+            # x+y = Np(up) - Np(dn)
+            NpC = n_pass_ct[bin]
+            NpU = n_pass_qcd[bin][index_up]
+            NpD = n_pass_qcd[bin][index_dn]
+            SpC = n_pass_ct_sumw2[bin]
+            SpU = n_pass_qcd_sumw2[bin][index_up]
+            SpD = n_pass_qcd_sumw2[bin][index_dn]
+            print NpC,' ',NpU,' ',NpD,' ',SpC,' ',SpU,' ',SpD
+            eff_rel_unc[plot][bin] = ( 0.0 if eff[plot][bin]<=0.0 else abs(eff_up[plot][bin]-eff_dn[plot][bin])/2/eff[plot][bin] ) #this is the correct calculation
+            eff_rel_unc_err[plot][bin] = ( (NpC + NpD - NpU)**2 * abs(SpC - SpD) + (NpC)**2 * abs(SpU - SpC) + (NpU - NpD)**2 * abs(SpD) ) / ( 4 * (NpC)**4 )
+
         g[plot] = ROOT.TGraphErrors(nbins[plot], x[plot], y[plot], ex[plot], ey[plot])
         g[plot].SetName('gr_'+plot.title)
         mg.Add(g[plot])
@@ -1046,6 +1115,40 @@ def makeQCDTable(massbins, outroot,  *plots):
     print r"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
 
 
+    print r"%%%%%%%%%%%%%% VBF-tag Efficiency with QCD Scale %%%%%%%%%%%%%%%"
+    print r"\begin{center}"
+    print r"\begin{tabular}{ |%s| }" % ("|".join("c" * 6))
+    print r"\hline"
+    print "Process & $\epsilon$ & $\epsilon(up)$ & $\epsilon(dn)$ & $\delta\epsilon(QCD)/\epsilon$\\\\"
+    for plot in plots:
+        for bin in bins:
+#            print plot.title,' & ','${0:.4f}\pm{1:.4f}$'.format(eff[plot][bin],eff_err[plot][bin]),' & ',
+#            print '${0:.4f}\pm{1:.4f}$'.format(eff_up[plot][bin],eff_up_err[plot][bin]),' & ',
+#            print '${0:.4f}\pm{1:.4f}$'.format(eff_dn[plot][bin],eff_dn_err[plot][bin]),' & ',
+#            print '${0:.4f}\pm{1:.4f}$'.format(eff_rel_unc[plot][bin],eff_rel_unc_err[plot][bin]),' \\\\'
+            print plot.title,' & ',latex_float(eff[plot][bin]),'$\pm$',latex_float(eff_err[plot][bin]),' & ',
+            print latex_float(eff_up[plot][bin]),'$\pm$',latex_float(eff_up_err[plot][bin]),' & ',
+            print latex_float(eff_dn[plot][bin]),'$\pm$',latex_float(eff_dn_err[plot][bin]),' & ',
+            print latex_float(eff_rel_unc[plot][bin]),'$\pm$',latex_float(eff_rel_unc_err[plot][bin]),' \\\\'
+    print r"\hline"
+    print r"\end{tabular}"
+    print r"\end{center}"
+    print r"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+
+    print r"%%%%%%%%%%%%%% VBF-tag Efficiency with QCD Scale %%%%%%%%%%%%%%%"
+    print r"\begin{center}"
+    print r"\begin{tabular}{ |%s| }" % ("|".join("c" * 6))
+    print r"\hline"
+    print "Process &  N(pass) &  N(pass,norm) & N(pass,up) & N(pass,dn) & $\rm \frac{N(tot,up)-N(tot,dn)}{2~N(tot,norm)}$ & N(total) & N(total,norm) & N(total,up) & N(total,dn) & $\rm \frac{N(tot,up)-N(tot,dn)}{2~N(tot,norm)}$\\\\"
+    for plot in plots:
+        for bin in bins:
+            print plot.title,' & ','{0:.1f}'.format(n_pass[plot][bin]),' & ','{0:.1f}'.format(n_pass_md[plot][bin]),' & ','{0:.1f}'.format(n_pass_up[plot][bin]),' & ','{0:.1f}'.format(n_pass_dn[plot][bin]),'{0:.4f}'.format(abs(n_pass_up[plot][bin]-n_pass_dn[plot][bin])/(2*n_pass_md[plot][bin])),' & ','{0:.1f}'.format(n_total[plot][bin]),' & ','{0:.1f}'.format(n_total_md[plot][bin]),' & ','{0:.1f}'.format(n_total_up[plot][bin]),' & ','{0:.1f}'.format(n_total_dn[plot][bin]),'{0:.4f}'.format(abs(n_total_up[plot][bin]-n_total_dn[plot][bin])/(2*n_total_md[plot][bin])),' \\\\'
+    print r"\hline"
+    print r"\end{tabular}"
+    print r"\end{center}"
+    print r"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
 
 if __name__ == "__main__":
     forplot = False
@@ -1072,7 +1175,7 @@ if __name__ == "__main__":
                  TreePlot("VBF",  1, 3003, 
                     "VBFH125",
 #                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
-                         ),
+                        ),
                  TreePlot("ggH", 2, 3003, 
                     "ggH125",
 #                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",

@@ -128,8 +128,8 @@ class TreePlot(Plot):
         for i, entry in enumerate(t):
             #t.GetEntry(i)
 
-            #wt = entry.genHEPMCweight * entry.PUWeight * entry.dataMCWeight
-            wt = entry.genHEPMCweight #* entry.PUWeight * entry.dataMCWeight
+            wt = entry.genHEPMCweight * entry.PUWeight * entry.dataMCWeight
+            #wt = entry.genHEPMCweight #* entry.PUWeight * entry.dataMCWeight
 
             try:
                 pass_ct = entry.nCleanedJetsPt30>=2 and 1.0/(1.0+entry.phjj_VAJHU_old/entry.pvbf_VAJHU_old)>0.5
@@ -572,13 +572,20 @@ def makeJECTable(massbins, outroot,  *plots):
     for bin in bins:
         print r"\hline"
         print row_format.format(bin, *(eff[plot][bin]*100 for plot in plots))
-        print row_format.format('$epsilon(JEC-up)$', *((eff[plot][bin]+eff_unc_up[plot][bin]*eff[plot][bin])*100 for plot in plots))
-        print row_format.format('$epsilon(JEC-dn)$', *((eff[plot][bin]-eff_unc_dn[plot][bin]*eff[plot][bin])*100 for plot in plots))
+        print row_format.format('$\epsilon(JEC-up)$', *((eff[plot][bin]+eff_unc_up[plot][bin]*eff[plot][bin])*100 for plot in plots))
+        print row_format.format('$\epsilon(JEC-dn)$', *((eff[plot][bin]-eff_unc_dn[plot][bin]*eff[plot][bin])*100 for plot in plots))
         print row_format.format('$\delta\epsilon(JEC)/\epsilon$', *((eff_unc_up[plot][bin]+eff_unc_dn[plot][bin])/2*100 for plot in plots))
     print r"\hline"
     print r"\end{tabular}"
     print r"\end{center}"
     print r"%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%"
+
+    print  r"%%%%%%%%%%%%%% VBF-tag Efficiency with JEC %%%%%%%%%%%%%%%"
+    for plot in plots:
+        for bin in bins:
+            print plot.title,' & ',"{0:.4f}".format(eff[plot][bin]),' & ',"{0:.4f}".format((eff[plot][bin]-eff_unc_dn[plot][bin]*eff[plot][bin])),' & ',"{0:.4f}".format((eff[plot][bin]+eff_unc_up[plot][bin]*eff[plot][bin])),' & ',"{0:.4f}".format((eff_unc_up[plot][bin]+eff_unc_dn[plot][bin])/2*eff[plot][bin]),' & ',"{0:.4f}".format((eff_unc_up[plot][bin]+eff_unc_dn[plot][bin])/2),'\\\\'
+
+
 
 if __name__ == "__main__":
     forplot = False
@@ -605,28 +612,28 @@ if __name__ == "__main__":
                     "VBFH125",
 #                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
                          ),
-#                 TreePlot("ggH", 2, 3004, 
-#                    "ggH125",
+                 TreePlot("ggH", 2, 3004, 
+                    "ggH125",
 #                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
-#                          ),
-#                 TreePlot("ZH",   ROOT.kGreen-6, 3005, 
-#                   "ZH125", 
+                          ),
+                 TreePlot("ZH",   ROOT.kGreen-6, 3005, 
+                   "ZH125", 
 #                    "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400", 
-#                           ),
-#                 TreePlot("WH",   3,  3011,  
-#                  "WplusH125", 
+                           ),
+                 TreePlot("WH",   3,  3011,  
+                  "WplusH125", 
 #                    "WplusH115", "WplusH120","WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400",
-#                          ),
-#                 TreePlot("ttH",  4, 3012,  "ttH125"),
-#                 TreePlot("qqZZ", 6, 3013,  "ZZTo4l"),
-#                 TreePlot("ggZZ", ROOT.kViolet-1, 3016, #"ggZZ2e2mu", 
-#                    "ggZZ2e2mu", "ggZZ2e2tau", "ggZZ2mu2tau", "ggZZ4e", "ggZZ4mu", "ggZZ4tau", 
-#                           ),
+                          ),
+                 TreePlot("ttH",  4, 3012,  "ttH125"),
+                 TreePlot("qqZZ", 6, 3013,  "ZZTo4l"),
+                 TreePlot("ggZZ", ROOT.kViolet-1, 3016, #"ggZZ2e2mu", 
+                    "ggZZ2e2mu", "ggZZ2e2tau", "ggZZ2mu2tau", "ggZZ4e", "ggZZ4mu", "ggZZ4tau", 
+                           ),
 #                 ZXPlot(7, 3017),
                 )
         if fortable:
             makeDjettable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
         elif doJEC:
-#            makeJECTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], *plots)
-            makeJECTable([100, 150],  'outjec.root', *plots)
+#            makeJECTable([100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 300, 400, 500, 600, 700, 800, 900, 1000], 'outjecall.root', *plots)
+            makeJECTable([100, 500],  'outjec125.root', *plots)
 

@@ -20,7 +20,8 @@ def latex_float(f):
         return float_str
 
 class Plot(object):
-    maindir = "root://lxcms03://data3/Higgs/160203/"
+    #maindir = "root://lxcms03://data3/Higgs/160203/"
+    maindir = "root://lxcms03://data3/Higgs/160225/"
     basename = "ZZ4lAnalysis.root"
     min = 0.
     max = 1.
@@ -238,7 +239,8 @@ class TreePlot(Plot):
             #t.GetEntry(i)
 
             # get weights
-            wt = entry.genHEPMCweight
+            wt = entry.genHEPMCweight * entry.PUWeight * entry.dataMCWeight
+            wt1 = entry.PUWeight * entry.dataMCWeight
 
             # qcd scale weights
             wts = []
@@ -268,14 +270,14 @@ class TreePlot(Plot):
                         n_pass_ct[bin] += wt
                         n_pass_ct_sumw2[bin] +=wt*wt
                         for ibb in range(9): 
-                            n_pass_qcd[bin][ibb] += wt*wts[ibb]
-                            n_pass_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
+                            n_pass_qcd[bin][ibb] += wts[ibb]*wt1
+                            n_pass_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]*wt1*wt1
                     else:
                         n_fail_ct[bin] += wt
                         n_fail_ct_sumw2[bin] +=wt*wt
                         for ibb in range(9):
-                            n_fail_qcd[bin][ibb] += wt*wts[ibb]
-                            n_fail_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
+                            n_fail_qcd[bin][ibb] += wts[ibb]*wt1
+                            n_fail_qcd_sumw2[bin][ibb] += wts[ibb]*wts[ibb]*wt1*wt1
 
         for bin in bins:
             try:
@@ -290,6 +292,7 @@ class TreePlot(Plot):
             for ibb in range(9):
                 try:
                     eff_qcd[bin][ibb] = n_pass_qcd[bin][ibb]/(n_pass_qcd[bin][ibb]+n_fail_qcd[bin][ibb])
+                    #eff_qcd[bin][ibb] = n_pass_qcd[bin][ibb]/(n_pass_ct[bin]+n_fail_ct[bin])
                     eff_qcd_err[bin][ibb] = sqrt((n_fail_qcd[bin][ibb]**2*n_pass_qcd_sumw2[bin][ibb]+n_pass_qcd[bin][ibb]**2*n_fail_qcd_sumw2[bin][ibb])/(n_fail_qcd[bin][ibb]**4))
                 except ZeroDivisionError:
                     eff_qcd[bin][ibb] = 0.0

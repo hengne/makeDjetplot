@@ -20,7 +20,8 @@ def latex_float(f):
         return float_str
 
 class Plot(object):
-    maindir = "root://lxcms03://data3/Higgs/160203/"
+    #maindir = "root://lxcms03://data3/Higgs/160203/"
+    maindir = "root://lxcms03://data3/Higgs/160225/"
     basename = "ZZ4lAnalysis.root"
     min = 0.
     max = 1.
@@ -238,7 +239,8 @@ class TreePlot(Plot):
             #t.GetEntry(i)
 
             # get weights
-            wt = entry.genHEPMCweight
+            wt = entry.genHEPMCweight * entry.PUWeight * entry.dataMCWeight
+            wt1 = entry.PUWeight * entry.dataMCWeight
 
             # qcd scale weights
             wts = []
@@ -268,18 +270,14 @@ class TreePlot(Plot):
                         n_pass_ct[bin] += wt
                         n_pass_ct_sumw2[bin] +=wt*wt
                         for ibb in range(9): 
-                            #n_pass_qcd[bin][ibb] += wt*wts[ibb]
-                            #n_pass_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
-                            n_pass_qcd[bin][ibb] += wts[ibb]
-                            n_pass_qcd_sumw2[bin][ibb] += wts[ibb]*wts[ibb]
+                            n_pass_qcd[bin][ibb] += wts[ibb]*wt1
+                            n_pass_qcd_sumw2[bin][ibb] += wts[ibb]*wts[ibb]*wt1*wt1
                     else:
                         n_fail_ct[bin] += wt
                         n_fail_ct_sumw2[bin] +=wt*wt
                         for ibb in range(9):
-                            #n_fail_qcd[bin][ibb] += wt*wts[ibb]
-                            #n_fail_qcd_sumw2[bin][ibb] += wt*wts[ibb]*wt*wts[ibb]
-                            n_fail_qcd[bin][ibb] += wts[ibb]
-                            n_fail_qcd_sumw2[bin][ibb] += wts[ibb]*wts[ibb]
+                            n_fail_qcd[bin][ibb] += wts[ibb]*wt1
+                            n_fail_qcd_sumw2[bin][ibb] += wts[ibb]*wts[ibb]*wt1*wt1
 
         for bin in bins:
             try:
@@ -1120,24 +1118,24 @@ if __name__ == "__main__":
     elif fortable or doJEC or doQCD:
         plots = (
 
-#                 TreePlot("VBF",  1, 3003, 
-#                    "VBFH125",
+                 TreePlot("VBF",  1, 3003, 
+                    "VBFH125",
 #                    "VBFH125","VBFH124", "VBFH125", "VBFH126", "VBFH130", "VBFH135", "VBFH140", "VBFH155", "VBFH160", "VBFH165", "VBFH170", "VBFH175", "VBFH200", "VBFH210", "VBFH230", "VBFH250", "VBFH270", "VBFH300", "VBFH350", "VBFH400", "VBFH450", "VBFH500", "VBFH550", "VBFH600", "VBFH700", "VBFH750", "VBFH800", "VBFH900", "VBFH1000", 
-#                        ),
+                        ),
                  TreePlot("ggH", 2, 3003, 
                     "ggH125",
 #                    "ggH115", "ggH120", "ggH124", "ggH125", "ggH126", "ggH130", "ggH135", "ggH140", "ggH145", "ggH150", "ggH155", "ggH160", "ggH165", "ggH170", "ggH175", "ggH180", "ggH190", "ggH210", "ggH230", "ggH250", "ggH270", "ggH300", "ggH350", "ggH400", "ggH450", "ggH500", "ggH550", "ggH600", "ggH700", "ggH800", "ggH900", "ggH1000",
                           ),
-#                 TreePlot("ZH",   ROOT.kGreen-6, 3003, 
-#                   "ZH125", 
+                 TreePlot("ZH",   ROOT.kGreen-6, 3003, 
+                   "ZH125", 
 #                    "ZH120", "ZH124", "ZH125", "ZH145", "ZH150", "ZH165", "ZH180", "ZH200", "ZH300", "ZH400", 
-#                           ),
-#                 TreePlot("WH",   3,  3003,  
-#                  "WplusH125", 
+                           ),
+                 TreePlot("WH",   3,  3003,  
+                  "WplusH125", 
 #                    "WplusH115", "WplusH120","WplusH125", "WplusH130", "WplusH135", "WplusH140", "WplusH145", "WplusH150", "WplusH155", "WplusH160", "WplusH165", "WplusH175", "WplusH180", "WplusH190", "WplusH210", "WplusH230", "WplusH250", "WplusH270", "WplusH300", "WplusH350", "WplusH400", "WminusH115", "WminusH120", "WminusH124", "WminusH125", "WminusH126", "WminusH130", "WminusH135", "WminusH140", "WminusH145", "WminusH150", "WminusH155", "WminusH160", "WminusH165", "WminusH170", "WminusH175", "WminusH180", "WminusH190", "WminusH210", "WminusH230", "WminusH250", "WminusH270", "WminusH300", "WminusH350", "WminusH400",
-#                          ),
-#                 TreePlot("ttH",  4, 3003,  "ttH125"),
-#                 TreePlot("qqZZ", 6, 3003,  "ZZTo4l"),
+                          ),
+                 TreePlot("ttH",  4, 3003,  "ttH125"),
+                 TreePlot("qqZZ", 6, 3003,  "ZZTo4l"),
 #                 TreePlot("ggZZ", ROOT.kViolet-1, 3003, 
 #                     "ggZZ2e2mu", 
 #                    "ggZZ2e2mu", "ggZZ2e2tau", "ggZZ2mu2tau", "ggZZ4e", "ggZZ4mu", "ggZZ4tau", 
